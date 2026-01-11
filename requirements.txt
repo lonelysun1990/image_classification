@@ -1,0 +1,23 @@
+# Core dependencies
+torch>=2.0.0
+torchvision>=0.15.0
+numpy>=1.21.0
+
+# ML utilities
+scikit-learn>=1.0.0
+
+# Experiment tracking
+wandb>=0.15.0
+
+# Visualization
+matplotlib>=3.5.0
+
+# Configuration
+pyyaml>=6.0
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0
+
+# Optional: for faster data loading
+# Pillow-SIMD>=9.0.0

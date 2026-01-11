@@ -1,0 +1,48 @@
+# Default configuration for image classification experiments
+
+# Data configuration
+data:
+  dataset: "fashion_mnist"
+  data_dir: "./data"
+  batch_size: 64
+  train_ratio: 0.85
+  val_ratio: 0.15
+  augmentation_level: "standard"  # none, light, standard, heavy
+  use_imbalanced_sampler: false
+  num_workers: 0
+
+# Model configuration
+model:
+  name: "cnn"  # cnn, vit, cnn_small, cnn_large, vit_tiny, vit_small
+  # CNN specific
+  base_filters: 32
+  num_conv_layers: 3
+  fc_hidden_dim: 128
+  # ViT specific
+  patch_size: 7
+  embed_dim: 128
+  num_heads: 4
+  num_layers: 4
+  mlp_ratio: 4.0
+  # Common
+  dropout: 0.25
+
+# Training configuration
+training:
+  num_epochs: 10
+  learning_rate: 0.001
+  optimizer: "adam"
+  scheduler: "cosine"
+  early_stopping_patience: 5
+  save_best_model: true
+
+# Wandb configuration
+wandb:
+  enabled: true
+  project: "image-classification"
+  run_name: null  # Auto-generated if null
+
+# Experiment configuration
+experiment:
+  seed: 42
+  device: "auto"  # auto, cpu, cuda, mps

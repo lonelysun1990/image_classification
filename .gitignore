@@ -1,3 +1,4 @@
 .DS_Store
 __pycache__/
 ui/backend/sample_data/*.png
+data/fashion_mnist_raw/

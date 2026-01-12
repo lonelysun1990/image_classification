@@ -1,0 +1,24 @@
+[
+  {
+    "run_id": "cnn-run-20240115-101530-01",
+    "version": "CNN-v001",
+    "trained_at": "2024-01-15T10:15:30Z",
+    "model_type": "cnn",
+    "train_accuracy": 0.93,
+    "train_loss": 0.21,
+    "val_accuracy": 0.89,
+    "val_loss": 0.32,
+    "notes": "Baseline CNN on Fashion-MNIST"
+  },
+  {
+    "run_id": "vit-run-20240202-143210-01",
+    "version": "VIT-v001",
+    "trained_at": "2024-02-02T14:32:10Z",
+    "model_type": "vit",
+    "train_accuracy": 0.95,
+    "train_loss": 0.18,
+    "val_accuracy": 0.91,
+    "val_loss": 0.29,
+    "notes": "ViT tiny with standard augmentation"
+  }
+]

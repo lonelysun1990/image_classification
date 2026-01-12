@@ -132,6 +132,37 @@ pytest tests/ -v
 pytest tests/ --cov=image_classification
 ```
 
+## Hosting the UI (Frontend + Backend)
+
+### Backend (FastAPI)
+
+```bash
+# Install backend dependencies
+pip install -r ui/backend/requirements.txt
+
+# Run the API server from the repo root
+uvicorn ui.backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+The API will be available at `http://localhost:8000`, and sample images are served from
+`http://localhost:8000/static/...`.
+
+### Frontend (Vite + React)
+
+```bash
+# Install frontend dependencies
+cd ui/frontend
+npm install
+
+# Point the UI at the backend (optional if using localhost:8000)
+export VITE_API_BASE="http://localhost:8000"
+
+# Start the dev server
+npm run dev
+```
+
+Open the frontend at the URL printed by Vite (typically `http://localhost:5173`).
+
 ## Project Structure
 
 ```

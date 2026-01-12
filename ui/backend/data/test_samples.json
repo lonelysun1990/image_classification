@@ -2,16 +2,16 @@
   {
     "id": "sample-1",
     "filename": "sample_red.png",
-    "label": "class_a"
+    "label": "T-shirt/top"
   },
   {
     "id": "sample-2",
     "filename": "sample_green.png",
-    "label": "class_b"
+    "label": "Trouser"
   },
   {
     "id": "sample-3",
     "filename": "sample_blue.png",
-    "label": "class_c"
+    "label": "Pullover"
   }
 ]

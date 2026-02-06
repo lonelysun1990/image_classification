@@ -271,16 +271,21 @@ export default function App() {
                   ))}
                 </div>
               )}
-              <button
-                className="primary"
-                type="button"
-                onClick={handlePredict}
-                disabled={!canPredict}
-              >
-                Run Prediction
-              </button>
             </div>
           </div>
+
+          <button
+            className="primary run-predict-btn"
+            type="button"
+            onClick={handlePredict}
+            disabled={!canPredict}
+          >
+            Run Prediction
+            {selectedSamples.size > 0 && ` (${selectedSamples.size} samples`}
+            {selectedSamples.size > 0 && uploads.length > 0 && ` + ${uploads.length} uploads`}
+            {selectedSamples.size === 0 && uploads.length > 0 && ` (${uploads.length} uploads`}
+            {(selectedSamples.size > 0 || uploads.length > 0) && ")"}
+          </button>
 
           {/* Prediction error */}
           {predictionError && (

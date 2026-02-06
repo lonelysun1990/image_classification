@@ -1,17 +1,22 @@
 [
-  {
-    "id": "sample-1",
-    "filename": "sample_red.png",
-    "label": "T-shirt/top"
-  },
-  {
-    "id": "sample-2",
-    "filename": "sample_green.png",
-    "label": "Trouser"
-  },
-  {
-    "id": "sample-3",
-    "filename": "sample_blue.png",
-    "label": "Pullover"
-  }
+  {"id": "sample-1", "filename": "T-shirt_top_1.png", "label": "T-shirt/top"},
+  {"id": "sample-2", "filename": "T-shirt_top_2.png", "label": "T-shirt/top"},
+  {"id": "sample-3", "filename": "Trouser_1.png", "label": "Trouser"},
+  {"id": "sample-4", "filename": "Trouser_2.png", "label": "Trouser"},
+  {"id": "sample-5", "filename": "Pullover_1.png", "label": "Pullover"},
+  {"id": "sample-6", "filename": "Pullover_2.png", "label": "Pullover"},
+  {"id": "sample-7", "filename": "Dress_1.png", "label": "Dress"},
+  {"id": "sample-8", "filename": "Dress_2.png", "label": "Dress"},
+  {"id": "sample-9", "filename": "Coat_1.png", "label": "Coat"},
+  {"id": "sample-10", "filename": "Coat_2.png", "label": "Coat"},
+  {"id": "sample-11", "filename": "Sandal_1.png", "label": "Sandal"},
+  {"id": "sample-12", "filename": "Sandal_2.png", "label": "Sandal"},
+  {"id": "sample-13", "filename": "Shirt_1.png", "label": "Shirt"},
+  {"id": "sample-14", "filename": "Shirt_2.png", "label": "Shirt"},
+  {"id": "sample-15", "filename": "Sneaker_1.png", "label": "Sneaker"},
+  {"id": "sample-16", "filename": "Sneaker_2.png", "label": "Sneaker"},
+  {"id": "sample-17", "filename": "Bag_1.png", "label": "Bag"},
+  {"id": "sample-18", "filename": "Bag_2.png", "label": "Bag"},
+  {"id": "sample-19", "filename": "Ankle_boot_1.png", "label": "Ankle boot"},
+  {"id": "sample-20", "filename": "Ankle_boot_2.png", "label": "Ankle boot"}
 ]

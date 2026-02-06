@@ -150,6 +150,12 @@ body {
   cursor: not-allowed;
 }
 
+.run-predict-btn {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 16px;
+}
+
 .file-list {
   list-style: none;
   padding: 0;

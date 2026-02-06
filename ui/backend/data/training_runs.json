@@ -1,24 +1,46 @@
 [
   {
-    "run_id": "cnn-run-20240115-101530-01",
-    "version": "CNN-v001",
-    "trained_at": "2024-01-15T10:15:30Z",
-    "model_type": "cnn",
-    "train_accuracy": 0.93,
-    "train_loss": 0.21,
-    "val_accuracy": 0.89,
-    "val_loss": 0.32,
-    "notes": "Baseline CNN on Fashion-MNIST"
+    "model_type": "cnn_large",
+    "train_accuracy": 0.8324,
+    "train_loss": 0.501,
+    "val_accuracy": 0.8891,
+    "val_loss": 0.3066,
+    "notes": "Trained 5 epochs, lr=0.001, batch=64",
+    "run_id": "cnn_large-run-20260206-191058-01",
+    "version": "CNN_LARGE-v001",
+    "trained_at": "2026-02-06T19:10:58.003913Z"
   },
   {
-    "run_id": "vit-run-20240202-143210-01",
-    "version": "VIT-v001",
-    "trained_at": "2024-02-02T14:32:10Z",
-    "model_type": "vit",
-    "train_accuracy": 0.95,
-    "train_loss": 0.18,
-    "val_accuracy": 0.91,
-    "val_loss": 0.29,
-    "notes": "ViT tiny with standard augmentation"
+    "model_type": "cnn_small",
+    "train_accuracy": 0.4407,
+    "train_loss": 1.6281,
+    "val_accuracy": 0.6623,
+    "val_loss": 1.2349,
+    "notes": "Trained 5 epochs, lr=0.001, batch=64",
+    "run_id": "cnn_small-run-20260206-190054-03",
+    "version": "CNN_SMALL-v003",
+    "trained_at": "2026-02-06T19:00:54.673646Z"
+  },
+  {
+    "model_type": "cnn_small",
+    "train_accuracy": 0.3378,
+    "train_loss": 1.9637,
+    "val_accuracy": 0.5661,
+    "val_loss": 1.5843,
+    "notes": "Trained 1 epochs, lr=0.001, batch=64",
+    "run_id": "cnn_small-run-20260206-185617-02",
+    "version": "CNN_SMALL-v002",
+    "trained_at": "2026-02-06T18:56:17.459727Z"
+  },
+  {
+    "model_type": "cnn_small",
+    "train_accuracy": 0.3191,
+    "train_loss": 2.0405,
+    "val_accuracy": 0.5778,
+    "val_loss": 1.7278,
+    "notes": "Trained 1 epochs, lr=0.001, batch=128",
+    "run_id": "cnn_small-run-20260206-184528-01",
+    "version": "CNN_SMALL-v001",
+    "trained_at": "2026-02-06T18:45:28.233517Z"
   }
 ]

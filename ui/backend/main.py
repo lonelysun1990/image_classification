@@ -317,7 +317,7 @@ async def create_training_run(payload: TrainingRunIn) -> TrainingRunOut:
 
 
 @app.get("/api/test-samples")
-async def get_test_samples() -> Dict[str, List[Dict[str, str]]]:
+async def get_test_samples() -> Dict[str, Any]:
     samples = load_test_samples()
     return {
         "samples": samples,

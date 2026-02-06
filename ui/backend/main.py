@@ -179,8 +179,13 @@ def _load_model_for_inference(checkpoint_path: str) -> torch.nn.Module:
     checkpoint = torch.load(checkpoint_path, map_location=device, weights_only=False)
     model_type = checkpoint.get("model_type", "cnn")
     model = get_model(model_type)
-    model.load_state_dict(checkpoint["model_state_dict"])
+    # CNN models use lazy FC init; run a dummy forward pass to build all layers
+    # before loading the state dict.
+    dummy = torch.zeros(1, 1, 28, 28, device=device)
     model.to(device)
+    with torch.no_grad():
+        model(dummy)
+    model.load_state_dict(checkpoint["model_state_dict"])
     model.eval()
     return model
 

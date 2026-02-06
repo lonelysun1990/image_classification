@@ -52,3 +52,64 @@ export async function predictSamples(formData) {
 export function staticSampleUrl(filename) {
   return `${API_BASE}/static/${filename}`;
 }
+
+export async function startTraining(config) {
+  const response = await fetch(`${API_BASE}/api/train`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(config)
+  });
+  if (!response.ok) {
+    throw new Error("Failed to start training.");
+  }
+  return response.json();
+}
+
+export function getTrainingProgress(onEpoch, onDone, onError) {
+  const eventSource = new EventSource(`${API_BASE}/api/train/progress`);
+
+  eventSource.addEventListener("epoch", (event) => {
+    const data = JSON.parse(event.data);
+    onEpoch(data);
+  });
+
+  eventSource.addEventListener("done", (event) => {
+    const data = JSON.parse(event.data);
+    onDone(data);
+    eventSource.close();
+  });
+
+  eventSource.addEventListener("error", (event) => {
+    if (event.data) {
+      const data = JSON.parse(event.data);
+      onError(data);
+    } else {
+      onError({ error: "Connection lost" });
+    }
+    eventSource.close();
+  });
+
+  eventSource.addEventListener("idle", () => {
+    eventSource.close();
+  });
+
+  return eventSource;
+}
+
+export async function getTrainStatus() {
+  const response = await fetch(`${API_BASE}/api/train/status`);
+  if (!response.ok) {
+    throw new Error("Failed to get training status.");
+  }
+  return response.json();
+}
+
+export async function fetchTrainedModels() {
+  const response = await fetch(`${API_BASE}/api/trained-models`);
+  if (!response.ok) {
+    throw new Error("Failed to load trained models.");
+  }
+  return response.json();
+}

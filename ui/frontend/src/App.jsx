@@ -1,23 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  createTrainingRun,
   fetchModelTypes,
   fetchTestSamples,
   fetchTrainingRuns,
+  fetchTrainedModels,
+  getTrainingProgress,
   predictSamples,
-  staticSampleUrl
+  startTraining,
+  staticSampleUrl,
 } from "./api.js";
 
 const TABS = {
   test: "Test Run",
-  training: "Training"
-};
-
-const emptyMetrics = {
-  train_accuracy: "",
-  train_loss: "",
-  val_accuracy: "",
-  val_loss: ""
+  training: "Training",
 };
 
 export default function App() {
@@ -29,38 +24,58 @@ export default function App() {
   const [selectedSamples, setSelectedSamples] = useState(new Set());
   const [uploads, setUploads] = useState([]);
   const [predictions, setPredictions] = useState([]);
+  const [predictionError, setPredictionError] = useState("");
   const [trainingRuns, setTrainingRuns] = useState([]);
-  const [trainingForm, setTrainingForm] = useState({
-    model_type: "",
-    notes: "",
-    ...emptyMetrics
-  });
+  const [trainedModels, setTrainedModels] = useState([]);
   const [status, setStatus] = useState({ type: "", message: "" });
+
+  // Training state
+  const [trainConfig, setTrainConfig] = useState({
+    model_type: "",
+    num_epochs: 5,
+    learning_rate: 0.001,
+    batch_size: 64,
+  });
+  const [trainStatus, setTrainStatus] = useState("idle"); // idle | running | completed | error
+  const [trainProgress, setTrainProgress] = useState([]);
+  const [trainError, setTrainError] = useState("");
+  const sseRef = useRef(null);
+
+  // Image preview for uploads
+  const [uploadPreviews, setUploadPreviews] = useState([]);
 
   useEffect(() => {
     async function bootstrap() {
       try {
-        const [models, samplesResponse, runs] = await Promise.all([
+        const [models, samplesResponse, runs, trained] = await Promise.all([
           fetchModelTypes(),
           fetchTestSamples(),
-          fetchTrainingRuns()
+          fetchTrainingRuns(),
+          fetchTrainedModels(),
         ]);
         setModelTypes(models);
         setModelType(models[0] || "");
-        setTrainingForm((prev) => ({
-          ...prev,
-          model_type: models[0] || ""
-        }));
+        setTrainConfig((prev) => ({ ...prev, model_type: models[0] || "" }));
         setTestSamples(samplesResponse.samples);
         setLabels(samplesResponse.labels);
         setTrainingRuns(runs);
+        setTrainedModels(trained);
       } catch (error) {
         setStatus({ type: "error", message: error.message });
       }
     }
-
     bootstrap();
   }, []);
+
+  // Generate previews when uploads change
+  useEffect(() => {
+    const previews = [];
+    for (const file of uploads) {
+      previews.push({ name: file.name, url: URL.createObjectURL(file) });
+    }
+    setUploadPreviews(previews);
+    return () => previews.forEach((p) => URL.revokeObjectURL(p.url));
+  }, [uploads]);
 
   const canPredict = useMemo(
     () => modelType && (selectedSamples.size > 0 || uploads.length > 0),
@@ -80,49 +95,79 @@ export default function App() {
   }
 
   async function handlePredict() {
-    if (!canPredict) {
-      return;
-    }
+    if (!canPredict) return;
+    setPredictionError("");
     const formData = new FormData();
     formData.append("model_type", modelType);
     formData.append("sample_ids", Array.from(selectedSamples).join(","));
-    uploads.forEach((file) => {
-      formData.append("files", file);
-    });
+    uploads.forEach((file) => formData.append("files", file));
 
     try {
       const response = await predictSamples(formData);
-      setPredictions(response.predictions);
-      setStatus({ type: "success", message: "Prediction completed." });
+      if (response.error) {
+        setPredictionError(response.error);
+        setPredictions([]);
+      } else {
+        setPredictions(response.predictions);
+        setStatus({ type: "success", message: "Prediction completed." });
+      }
     } catch (error) {
       setStatus({ type: "error", message: error.message });
     }
   }
 
-  async function handleTrainingSubmit(event) {
-    event.preventDefault();
-    const payload = {
-      model_type: trainingForm.model_type,
-      train_accuracy: Number(trainingForm.train_accuracy),
-      train_loss: Number(trainingForm.train_loss),
-      val_accuracy: Number(trainingForm.val_accuracy),
-      val_loss: Number(trainingForm.val_loss),
-      notes: trainingForm.notes || null
-    };
+  async function handleStartTraining() {
+    setTrainStatus("running");
+    setTrainProgress([]);
+    setTrainError("");
 
     try {
-      const run = await createTrainingRun(payload);
-      setTrainingRuns((prev) => [run, ...prev]);
-      setTrainingForm((prev) => ({
-        ...prev,
-        notes: "",
-        ...emptyMetrics
-      }));
-      setStatus({ type: "success", message: "Training run logged." });
+      const result = await startTraining(trainConfig);
+      if (result.status === "error") {
+        setTrainStatus("error");
+        setTrainError(result.message);
+        return;
+      }
+
+      // Connect to SSE for progress
+      if (sseRef.current) sseRef.current.close();
+
+      sseRef.current = getTrainingProgress(
+        // onEpoch
+        (epochData) => {
+          setTrainProgress((prev) => [...prev, epochData]);
+        },
+        // onDone
+        async () => {
+          setTrainStatus("completed");
+          // Refresh runs and models
+          const [runs, trained] = await Promise.all([
+            fetchTrainingRuns(),
+            fetchTrainedModels(),
+          ]);
+          setTrainingRuns(runs);
+          setTrainedModels(trained);
+        },
+        // onError
+        (errData) => {
+          setTrainStatus("error");
+          setTrainError(errData.error || "Training failed.");
+        }
+      );
     } catch (error) {
-      setStatus({ type: "error", message: error.message });
+      setTrainStatus("error");
+      setTrainError(error.message);
     }
   }
+
+  // Cleanup SSE on unmount
+  useEffect(() => {
+    return () => {
+      if (sseRef.current) sseRef.current.close();
+    };
+  }, []);
+
+  const latestEpoch = trainProgress.length > 0 ? trainProgress[trainProgress.length - 1] : null;
 
   return (
     <div className="app">
@@ -131,8 +176,8 @@ export default function App() {
           <p className="eyebrow">Image Classification UI</p>
           <h1>Model Training &amp; Test Console</h1>
           <p className="subtitle">
-            Track model versions, evaluate predictions, and benchmark against test
-            labels.
+            Train models on FashionMNIST, evaluate predictions, and view results
+            with confidence scores.
           </p>
         </div>
         <nav className="tabs">
@@ -153,14 +198,15 @@ export default function App() {
         <div className={`status ${status.type}`}>{status.message}</div>
       ) : null}
 
+      {/* ===== TEST TAB ===== */}
       {activeTab === "test" ? (
         <section className="panel">
           <div className="panel-header">
             <div>
               <h2>Test Run</h2>
               <p>
-                Select a model, choose test samples, or upload your own images to
-                verify predictions.
+                Select a model, choose test samples, or upload your own images
+                to verify predictions.
               </p>
             </div>
             <div className="select-group">
@@ -168,7 +214,7 @@ export default function App() {
               <select
                 id="model-select"
                 value={modelType}
-                onChange={(event) => setModelType(event.target.value)}
+                onChange={(e) => setModelType(e.target.value)}
               >
                 {modelTypes.map((model) => (
                   <option key={model} value={model}>
@@ -211,18 +257,19 @@ export default function App() {
                 type="file"
                 multiple
                 accept="image/*"
-                onChange={(event) =>
-                  setUploads(Array.from(event.target.files || []))
+                onChange={(e) =>
+                  setUploads(Array.from(e.target.files || []))
                 }
               />
-              {uploads.length ? (
-                <ul className="file-list">
-                  {uploads.map((file) => (
-                    <li key={file.name}>{file.name}</li>
+              {uploadPreviews.length > 0 && (
+                <div className="upload-previews">
+                  {uploadPreviews.map((p) => (
+                    <div key={p.name} className="upload-preview">
+                      <img src={p.url} alt={p.name} />
+                      <span>{p.name}</span>
+                    </div>
                   ))}
-                </ul>
-              ) : (
-                <p className="hint">No uploads selected.</p>
+                </div>
               )}
               <button
                 className="primary"
@@ -235,65 +282,101 @@ export default function App() {
             </div>
           </div>
 
+          {/* Prediction error */}
+          {predictionError && (
+            <div className="status error">{predictionError}</div>
+          )}
+
+          {/* Prediction Results */}
           <div className="card">
             <h3>Prediction Results</h3>
-            {predictions.length ? (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Image</th>
-                    <th>Predicted Label</th>
-                    <th>True Label</th>
-                    <th>Correct?</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {predictions.map((prediction, index) => (
-                    <tr key={`${prediction.filename}-${index}`}>
-                      <td>{prediction.filename}</td>
-                      <td>{prediction.predicted_label}</td>
-                      <td>{prediction.true_label || "Uploaded"}</td>
-                      <td>
-                        {prediction.correct === null
-                          ? "—"
-                          : prediction.correct
-                          ? "Yes"
-                          : "No"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            {predictions.length > 0 ? (
+              <div className="prediction-results">
+                {predictions.map((pred, index) => (
+                  <div key={`${pred.filename}-${index}`} className="prediction-card">
+                    <div className="prediction-image">
+                      {pred.image_base64 ? (
+                        <img
+                          src={`data:image/png;base64,${pred.image_base64}`}
+                          alt={pred.filename}
+                        />
+                      ) : (
+                        <div className="no-preview">No preview</div>
+                      )}
+                    </div>
+                    <div className="prediction-details">
+                      <div className="prediction-header">
+                        <strong>{pred.predicted_label}</strong>
+                        <span className="confidence-badge">
+                          {pred.confidence}%
+                        </span>
+                      </div>
+                      <p className="prediction-filename">{pred.filename}</p>
+                      {pred.true_label && (
+                        <p className="prediction-truth">
+                          True: {pred.true_label}{" "}
+                          {pred.correct !== null &&
+                            (pred.correct ? (
+                              <span className="correct">Correct</span>
+                            ) : (
+                              <span className="incorrect">Incorrect</span>
+                            ))}
+                        </p>
+                      )}
+                      <div className="top3">
+                        {pred.top3 &&
+                          pred.top3.map((item) => (
+                            <div key={item.label} className="confidence-row">
+                              <span className="conf-label">{item.label}</span>
+                              <div className="confidence-bar-track">
+                                <div
+                                  className="confidence-bar-fill"
+                                  style={{ width: `${item.confidence}%` }}
+                                />
+                              </div>
+                              <span className="conf-value">
+                                {item.confidence}%
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <p className="hint">No predictions yet. Choose samples to begin.</p>
             )}
           </div>
         </section>
       ) : (
+        /* ===== TRAINING TAB ===== */
         <section className="panel">
           <div className="panel-header">
             <div>
-              <h2>Training Runs</h2>
+              <h2>Training</h2>
               <p>
-                Track each model version with metrics and timestamps to keep a
-                complete audit trail.
+                Configure and train models on FashionMNIST with live progress
+                tracking.
               </p>
             </div>
           </div>
 
           <div className="grid">
-            <form className="card" onSubmit={handleTrainingSubmit}>
-              <h3>Log a Training Run</h3>
+            {/* Training Config Form */}
+            <div className="card">
+              <h3>Train a Model</h3>
               <label>
                 Model Type
                 <select
-                  value={trainingForm.model_type}
-                  onChange={(event) =>
-                    setTrainingForm((prev) => ({
+                  value={trainConfig.model_type}
+                  onChange={(e) =>
+                    setTrainConfig((prev) => ({
                       ...prev,
-                      model_type: event.target.value
+                      model_type: e.target.value,
                     }))
                   }
+                  disabled={trainStatus === "running"}
                 >
                   {modelTypes.map((model) => (
                     <option key={model} value={model}>
@@ -304,90 +387,149 @@ export default function App() {
               </label>
               <div className="metrics">
                 <label>
-                  Train Accuracy
+                  Epochs
                   <input
                     type="number"
-                    step="0.01"
-                    min="0"
-                    max="1"
-                    value={trainingForm.train_accuracy}
-                    onChange={(event) =>
-                      setTrainingForm((prev) => ({
+                    min="1"
+                    max="100"
+                    value={trainConfig.num_epochs}
+                    onChange={(e) =>
+                      setTrainConfig((prev) => ({
                         ...prev,
-                        train_accuracy: event.target.value
+                        num_epochs: parseInt(e.target.value) || 1,
                       }))
                     }
-                    required
+                    disabled={trainStatus === "running"}
                   />
                 </label>
                 <label>
-                  Train Loss
+                  Learning Rate
                   <input
                     type="number"
-                    step="0.01"
-                    min="0"
-                    value={trainingForm.train_loss}
-                    onChange={(event) =>
-                      setTrainingForm((prev) => ({
+                    step="0.0001"
+                    min="0.00001"
+                    value={trainConfig.learning_rate}
+                    onChange={(e) =>
+                      setTrainConfig((prev) => ({
                         ...prev,
-                        train_loss: event.target.value
+                        learning_rate: parseFloat(e.target.value) || 0.001,
                       }))
                     }
-                    required
+                    disabled={trainStatus === "running"}
                   />
                 </label>
                 <label>
-                  Validation Accuracy
+                  Batch Size
                   <input
                     type="number"
-                    step="0.01"
-                    min="0"
-                    max="1"
-                    value={trainingForm.val_accuracy}
-                    onChange={(event) =>
-                      setTrainingForm((prev) => ({
+                    min="1"
+                    max="512"
+                    value={trainConfig.batch_size}
+                    onChange={(e) =>
+                      setTrainConfig((prev) => ({
                         ...prev,
-                        val_accuracy: event.target.value
+                        batch_size: parseInt(e.target.value) || 64,
                       }))
                     }
-                    required
-                  />
-                </label>
-                <label>
-                  Validation Loss
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={trainingForm.val_loss}
-                    onChange={(event) =>
-                      setTrainingForm((prev) => ({
-                        ...prev,
-                        val_loss: event.target.value
-                      }))
-                    }
-                    required
+                    disabled={trainStatus === "running"}
                   />
                 </label>
               </div>
-              <label>
-                Notes
-                <textarea
-                  rows="3"
-                  value={trainingForm.notes}
-                  onChange={(event) =>
-                    setTrainingForm((prev) => ({
-                      ...prev,
-                      notes: event.target.value
-                    }))
-                  }
-                />
-              </label>
-              <button className="primary" type="submit">
-                Save Training Run
+              <button
+                className="primary"
+                type="button"
+                onClick={handleStartTraining}
+                disabled={trainStatus === "running"}
+              >
+                {trainStatus === "running" ? "Training..." : "Train Model"}
               </button>
-            </form>
 
+              {/* Progress section */}
+              {trainStatus === "running" && (
+                <div className="train-progress">
+                  <div className="progress-header">
+                    <span>
+                      Epoch {latestEpoch ? latestEpoch.epoch : 0} /{" "}
+                      {trainConfig.num_epochs}
+                    </span>
+                    <span>
+                      {latestEpoch
+                        ? `${Math.round(
+                            (latestEpoch.epoch / trainConfig.num_epochs) * 100
+                          )}%`
+                        : "0%"}
+                    </span>
+                  </div>
+                  <div className="progress-bar-track">
+                    <div
+                      className="progress-bar-fill"
+                      style={{
+                        width: latestEpoch
+                          ? `${(latestEpoch.epoch / trainConfig.num_epochs) * 100}%`
+                          : "0%",
+                      }}
+                    />
+                  </div>
+                  {latestEpoch && (
+                    <div className="epoch-metrics">
+                      <span>Loss: {latestEpoch.train_loss.toFixed(4)}</span>
+                      <span>Acc: {latestEpoch.train_acc.toFixed(2)}%</span>
+                      <span>Val Loss: {latestEpoch.val_loss.toFixed(4)}</span>
+                      <span>Val Acc: {latestEpoch.val_acc.toFixed(2)}%</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Completed summary */}
+              {trainStatus === "completed" && latestEpoch && (
+                <div className="train-complete">
+                  <h4>Training Complete</h4>
+                  <div className="epoch-metrics">
+                    <span>Final Loss: {latestEpoch.train_loss.toFixed(4)}</span>
+                    <span>Final Acc: {latestEpoch.train_acc.toFixed(2)}%</span>
+                    <span>Val Loss: {latestEpoch.val_loss.toFixed(4)}</span>
+                    <span>Val Acc: {latestEpoch.val_acc.toFixed(2)}%</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Error */}
+              {trainStatus === "error" && (
+                <div className="status error">{trainError}</div>
+              )}
+
+              {/* Epoch history table */}
+              {trainProgress.length > 0 && (
+                <div className="epoch-history">
+                  <h4>Epoch History</h4>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Epoch</th>
+                        <th>Train Loss</th>
+                        <th>Train Acc</th>
+                        <th>Val Loss</th>
+                        <th>Val Acc</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {trainProgress.map((ep) => (
+                        <tr key={ep.epoch}>
+                          <td>{ep.epoch}</td>
+                          <td>{ep.train_loss.toFixed(4)}</td>
+                          <td>{ep.train_acc.toFixed(2)}%</td>
+                          <td>{ep.val_loss.toFixed(4)}</td>
+                          <td>{ep.val_acc.toFixed(2)}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Saved Runs */}
             <div className="card">
               <h3>Saved Runs</h3>
               <div className="runs">
@@ -409,6 +551,26 @@ export default function App() {
                   </article>
                 ))}
               </div>
+
+              {/* Trained models */}
+              {trainedModels.length > 0 && (
+                <>
+                  <h3>Available Checkpoints</h3>
+                  <div className="runs">
+                    {trainedModels.map((m) => (
+                      <article key={m.filename} className="run">
+                        <header>
+                          <strong>{m.model_type.toUpperCase()}</strong>
+                          <span>{m.filename}</span>
+                        </header>
+                        {m.best_val_acc != null && (
+                          <p>Best Val Acc: {m.best_val_acc.toFixed(2)}%</p>
+                        )}
+                      </article>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </section>

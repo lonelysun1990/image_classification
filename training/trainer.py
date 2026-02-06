@@ -78,6 +78,7 @@ class Trainer:
         save_best_model: bool = False,
         model_save_path: str = "best_model.pt",
         verbose: bool = True,
+        progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
     ) -> Dict[str, List[float]]:
         """
         Train the model.
@@ -164,6 +165,17 @@ class Trainer:
                     'learning_rate': current_lr,
                 })
             
+            # Progress callback
+            if progress_callback is not None:
+                progress_callback({
+                    'epoch': epoch + 1,
+                    'total_epochs': num_epochs,
+                    'train_loss': train_loss,
+                    'train_acc': train_acc,
+                    'val_loss': val_loss,
+                    'val_acc': val_acc,
+                })
+
             # Check for best model
             if val_acc > self.best_val_acc:
                 self.best_val_acc = val_acc

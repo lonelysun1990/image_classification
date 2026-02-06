@@ -163,7 +163,7 @@ table {
 }
 
 th,
- td {
+td {
   text-align: left;
   padding: 10px 8px;
   border-bottom: 1px solid #e2e8f0;
@@ -209,6 +209,231 @@ select {
   font-size: 12px;
 }
 
+/* Upload previews */
+.upload-previews {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.upload-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.upload-preview img {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+}
+
+.upload-preview span {
+  font-size: 11px;
+  color: #64748b;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Prediction results */
+.prediction-results {
+  display: grid;
+  gap: 16px;
+}
+
+.prediction-card {
+  display: flex;
+  gap: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.prediction-image img {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #e2e8f0;
+}
+
+.no-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.prediction-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.prediction-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.confidence-badge {
+  background: #2563eb;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.prediction-filename {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
+
+.prediction-truth {
+  font-size: 13px;
+  margin: 0;
+}
+
+.correct {
+  color: #166534;
+  font-weight: 600;
+}
+
+.incorrect {
+  color: #991b1b;
+  font-weight: 600;
+}
+
+/* Top-3 confidence bars */
+.top3 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.confidence-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.conf-label {
+  font-size: 12px;
+  width: 90px;
+  flex-shrink: 0;
+  color: #475569;
+}
+
+.confidence-bar-track {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.confidence-bar-fill {
+  height: 100%;
+  background: #2563eb;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.conf-value {
+  font-size: 12px;
+  width: 48px;
+  text-align: right;
+  color: #475569;
+  flex-shrink: 0;
+}
+
+/* Training progress */
+.train-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f0f9ff;
+  border-radius: 12px;
+  border: 1px solid #bae6fd;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0369a1;
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 12px;
+  background: #e0f2fe;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0ea5e9, #2563eb);
+  border-radius: 6px;
+  transition: width 0.4s ease;
+}
+
+.epoch-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.epoch-metrics span {
+  background: white;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+}
+
+/* Training complete */
+.train-complete {
+  padding: 12px;
+  background: #f0fdf4;
+  border-radius: 12px;
+  border: 1px solid #bbf7d0;
+}
+
+.train-complete h4 {
+  margin: 0 0 8px;
+  color: #166534;
+}
+
+/* Epoch history */
+.epoch-history {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.epoch-history h4 {
+  margin: 0 0 8px;
+}
+
 @media (max-width: 720px) {
   .app-header {
     flex-direction: column;
@@ -217,5 +442,9 @@ select {
 
   .tabs {
     width: 100%;
+  }
+
+  .prediction-card {
+    flex-direction: column;
   }
 }
